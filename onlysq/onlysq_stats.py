@@ -10,8 +10,8 @@ from .. import loader, utils
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.0.1"
-MODULE_URL = "https://raw.githubusercontent.com/qaddasd/Modules/refs/heads/main/onlysq/onlysq_stats.py"
+__version__ = "1.0.2"
+MODULE_URL = "https://raw.githubusercontent.com/qaddasd/Modules/main/onlysq/onlysq_stats.py"
 
 
 @loader.tds
