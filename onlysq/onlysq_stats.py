@@ -11,7 +11,7 @@ from .. import loader, utils
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 MODULE_URL = "https://raw.githubusercontent.com/qaddasd/Modules/main/onlysq/onlysq_stats.py"
 
 
@@ -60,7 +60,7 @@ class OnlySqStatsMod(loader.Module):
         "no_update": "<emoji document_id=5372926953978341366>✅</emoji> <b>You have the latest version:</b> <code>{version}</code>",
         "checking_update": "<emoji document_id=5310093785313453924>⏳</emoji> <b>Checking for updates...</b>",
         "installing": "<emoji document_id=5310093785313453924>⏳</emoji> <b>Installing update...</b>\n\n{progress}",
-        "install_done": "<emoji document_id=5372926953978341366>✅</emoji> <b>Update installed!</b>\n\nReload module with <code>.dlmod</code>",
+        "install_done": "<emoji document_id=5372926953978341366>✅</emoji> <b>Update installed successfully!</b>",
         "install_error": "<emoji document_id=5372926858986475400>❌</emoji> <b>Installation error:</b> <code>{}</code>",
         "graph_header": "<emoji document_id=5371037748188879474>📊</emoji> <b>OnlySq API — Request Graph</b>",
         "graph_today": "Today",
@@ -110,7 +110,7 @@ class OnlySqStatsMod(loader.Module):
         "no_update": "<emoji document_id=5372926953978341366>✅</emoji> <b>У тебя последняя версия:</b> <code>{version}</code>",
         "checking_update": "<emoji document_id=5310093785313453924>⏳</emoji> <b>Проверка обновлений...</b>",
         "installing": "<emoji document_id=5310093785313453924>⏳</emoji> <b>Установка обновления...</b>\n\n{progress}",
-        "install_done": "<emoji document_id=5372926953978341366>✅</emoji> <b>Обновление установлено!</b>\n\nПерезагрузи модуль через <code>.dlmod</code>",
+        "install_done": "<emoji document_id=5372926953978341366>✅</emoji> <b>Обновление успешно установлено!</b>",
         "install_error": "<emoji document_id=5372926858986475400>❌</emoji> <b>Ошибка установки:</b> <code>{}</code>",
         "graph_header": "<emoji document_id=5371037748188879474>📊</emoji> <b>OnlySq API — График запросов</b>",
         "graph_today": "Сегодня",
@@ -370,23 +370,52 @@ class OnlySqStatsMod(loader.Module):
             if is_ru:
                 stages = [
                     (10, "Подключение к серверу..."),
-                    (25, "Скачивание модуля..."),
-                    (50, "Проверка целостности..."),
-                    (75, "Установка файлов..."),
-                    (90, "Финальная настройка..."),
-                    (100, "Готово!"),
+                    (30, "Скачивание модуля..."),
+                    (60, "Установка..."),
+                    (90, "Перезагрузка..."),
                 ]
             else:
                 stages = [
                     (10, "Connecting to server..."),
-                    (25, "Downloading module..."),
-                    (50, "Verifying integrity..."),
-                    (75, "Installing files..."),
-                    (90, "Final configuration..."),
-                    (100, "Done!"),
+                    (30, "Downloading module..."),
+                    (60, "Installing..."),
+                    (90, "Reloading..."),
                 ]
             
-            await self._animate_progress(message, stages)
+            for progress, text in stages[:2]:
+                bar = self._create_progress_bar(progress)
+                await utils.answer(
+                    message,
+                    self.strings["installing"].format(progress=f"{bar}\n\n<i>{text}</i>"),
+                )
+                await asyncio.sleep(0.4)
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(MODULE_URL) as response:
+                    if response.status != 200:
+                        raise Exception(f"HTTP {response.status}")
+                    module_code = await response.text()
+            
+            for progress, text in stages[2:3]:
+                bar = self._create_progress_bar(progress)
+                await utils.answer(
+                    message,
+                    self.strings["installing"].format(progress=f"{bar}\n\n<i>{text}</i>"),
+                )
+                await asyncio.sleep(0.3)
+            
+            await self.allmodules.load_module(
+                module_code,
+                origin=MODULE_URL,
+                save_fs=True,
+            )
+            
+            bar = self._create_progress_bar(100)
+            await utils.answer(
+                message,
+                self.strings["installing"].format(progress=f"{bar}\n\n<i>{'Готово!' if is_ru else 'Done!'}</i>"),
+            )
+            await asyncio.sleep(0.5)
             
             await utils.answer(message, self.strings["install_done"])
             
