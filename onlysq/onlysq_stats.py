@@ -4,13 +4,14 @@
 import logging
 import aiohttp
 import asyncio
+import re
 from telethon.tl.types import Message
 
 from .. import loader, utils
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 MODULE_URL = "https://raw.githubusercontent.com/qaddasd/Modules/main/onlysq/onlysq_stats.py"
 
 
@@ -147,9 +148,9 @@ class OnlySqStatsMod(loader.Module):
                 async with session.get(MODULE_URL) as response:
                     if response.status == 200:
                         content = await response.text()
-                        for line in content.split("\n"):
-                            if line.startswith("__version__"):
-                                return line.split("=")[1].strip().strip('"\'')
+                        match = re.search(r'__version__\s*=\s*["\']([\d.]+)["\']', content)
+                        if match:
+                            return match.group(1)
         except Exception:
             pass
         return None
@@ -357,9 +358,16 @@ class OnlySqStatsMod(loader.Module):
                 )
                 return
             
-            is_ru = self.strings["name"] == "OnlySqStats" and "Загрузка" in self.strings.get("loading", "")
+            is_ru = "Загрузка" in self.strings.get("loading", "")
             
-            if is_ru or (hasattr(self, '_db') and self._db.get("hikka.main", {}).get("lang", "en") == "ru"):
+            try:
+                if hasattr(self, '_db') and self._db:
+                    lang = self._db.get("hikka.main", {}).get("lang", "en")
+                    is_ru = is_ru or lang == "ru"
+            except Exception:
+                pass
+            
+            if is_ru:
                 stages = [
                     (10, "Подключение к серверу..."),
                     (25, "Скачивание модуля..."),
