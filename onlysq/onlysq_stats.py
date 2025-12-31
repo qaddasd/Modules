@@ -11,7 +11,7 @@ from .. import loader, utils
 logger = logging.getLogger(__name__)
 
 __version__ = "1.0.0"
-MODULE_URL = "https://raw.githubusercontent.com/qynon/hikka-modules/main/onlysq_stats.py"
+MODULE_URL = "https://raw.githubusercontent.com/qaddasd/Modules/refs/heads/main/onlysq/onlysq_stats.py"
 
 
 @loader.tds
@@ -375,3 +375,4 @@ class OnlySqStatsMod(loader.Module):
         except Exception as e:
             logger.exception("Failed to update module")
             await utils.answer(message, self.strings["install_error"].format(str(e)))
+
