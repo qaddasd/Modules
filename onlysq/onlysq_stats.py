@@ -11,7 +11,7 @@ from .. import loader, utils
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.0.4"
+__version__ = "1.0.5"
 MODULE_URL = "https://raw.githubusercontent.com/qaddasd/Modules/main/onlysq/onlysq_stats.py"
 
 
@@ -358,14 +358,7 @@ class OnlySqStatsMod(loader.Module):
                 )
                 return
             
-            is_ru = "Загрузка" in self.strings.get("loading", "")
-            
-            try:
-                if hasattr(self, '_db') and self._db:
-                    lang = self._db.get("hikka.main", {}).get("lang", "en")
-                    is_ru = is_ru or lang == "ru"
-            except Exception:
-                pass
+            is_ru = "Загрузка" in str(self.strings.get("loading", ""))
             
             if is_ru:
                 stages = [
