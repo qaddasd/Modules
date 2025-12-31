@@ -5,13 +5,14 @@ import logging
 import aiohttp
 import asyncio
 import re
+import time
 from telethon.tl.types import Message
 
 from .. import loader, utils
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.0.5"
+__version__ = "1.0.6"
 MODULE_URL = "https://raw.githubusercontent.com/qaddasd/Modules/main/onlysq/onlysq_stats.py"
 
 
@@ -144,8 +145,9 @@ class OnlySqStatsMod(loader.Module):
 
     async def _get_remote_version(self) -> str:
         try:
+            url = f"{MODULE_URL}?t={int(time.time())}"
             async with aiohttp.ClientSession() as session:
-                async with session.get(MODULE_URL) as response:
+                async with session.get(url) as response:
                     if response.status == 200:
                         content = await response.text()
                         match = re.search(r'__version__\s*=\s*["\']([\d.]+)["\']', content)
@@ -384,7 +386,8 @@ class OnlySqStatsMod(loader.Module):
                 await asyncio.sleep(0.4)
             
             async with aiohttp.ClientSession() as session:
-                async with session.get(MODULE_URL) as response:
+                url = f"{MODULE_URL}?t={int(time.time())}"
+                async with session.get(url) as response:
                     if response.status != 200:
                         raise Exception(f"HTTP {response.status}")
                     module_code = await response.text()
