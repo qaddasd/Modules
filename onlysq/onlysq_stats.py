@@ -10,7 +10,7 @@ from .. import loader, utils
 
 logger = logging.getLogger(__name__)
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 MODULE_URL = "https://raw.githubusercontent.com/qaddasd/Modules/refs/heads/main/onlysq/onlysq_stats.py"
 
 
@@ -61,6 +61,11 @@ class OnlySqStatsMod(loader.Module):
         "installing": "<emoji document_id=5310093785313453924>⏳</emoji> <b>Installing update...</b>\n\n{progress}",
         "install_done": "<emoji document_id=5372926953978341366>✅</emoji> <b>Update installed!</b>\n\nReload module with <code>.dlmod</code>",
         "install_error": "<emoji document_id=5372926858986475400>❌</emoji> <b>Installation error:</b> <code>{}</code>",
+        "graph_header": "<emoji document_id=5371037748188879474>📊</emoji> <b>OnlySq API — Request Graph</b>",
+        "graph_today": "Today",
+        "graph_week": "Week",
+        "graph_month": "Month",
+        "graph_total": "Total",
     }
 
     strings_ru = {
@@ -106,6 +111,11 @@ class OnlySqStatsMod(loader.Module):
         "installing": "<emoji document_id=5310093785313453924>⏳</emoji> <b>Установка обновления...</b>\n\n{progress}",
         "install_done": "<emoji document_id=5372926953978341366>✅</emoji> <b>Обновление установлено!</b>\n\nПерезагрузи модуль через <code>.dlmod</code>",
         "install_error": "<emoji document_id=5372926858986475400>❌</emoji> <b>Ошибка установки:</b> <code>{}</code>",
+        "graph_header": "<emoji document_id=5371037748188879474>📊</emoji> <b>OnlySq API — График запросов</b>",
+        "graph_today": "Сегодня",
+        "graph_week": "Неделя",
+        "graph_month": "Месяц",
+        "graph_total": "Всего",
         "_cls_doc": "Модуль для статистики OnlySq API. Показывает количество запросов и информацию о моделях.",
     }
 
@@ -376,3 +386,46 @@ class OnlySqStatsMod(loader.Module):
             logger.exception("Failed to update module")
             await utils.answer(message, self.strings["install_error"].format(str(e)))
 
+    def _create_bar_graph(self, value: int, max_value: int, width: int = 15) -> str:
+        if max_value == 0:
+            filled = 0
+        else:
+            filled = int(width * value / max_value)
+        empty = width - filled
+        return "█" * filled + "░" * empty
+
+    @loader.command(
+        ru_doc="Показать график запросов OnlySq API",
+        en_doc="Show OnlySq API requests graph",
+    )
+    async def sqgraph(self, message: Message):
+        await utils.answer(message, self.strings["loading"])
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                today = await self._fetch_count(session, "today")
+                week = await self._fetch_count(session, "week")
+                month = await self._fetch_count(session, "month")
+                all_time = await self._fetch_count(session, "all")
+
+            max_val = max(today, week, month, all_time)
+            
+            today_bar = self._create_bar_graph(today, max_val)
+            week_bar = self._create_bar_graph(week, max_val)
+            month_bar = self._create_bar_graph(month, max_val)
+            all_bar = self._create_bar_graph(all_time, max_val)
+
+            graph = (
+                f"{self.strings['graph_header']}\n\n"
+                f"<code>"
+                f"{self.strings['graph_today']:>8} │{today_bar}│ {self._format_number(today)}\n"
+                f"{self.strings['graph_week']:>8} │{week_bar}│ {self._format_number(week)}\n"
+                f"{self.strings['graph_month']:>8} │{month_bar}│ {self._format_number(month)}\n"
+                f"{self.strings['graph_total']:>8} │{all_bar}│ {self._format_number(all_time)}"
+                f"</code>"
+            )
+
+            await utils.answer(message, graph)
+        except Exception as e:
+            logger.exception("Failed to fetch OnlySq graph")
+            await utils.answer(message, self.strings["error"].format(str(e)))
